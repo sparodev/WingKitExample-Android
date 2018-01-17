@@ -474,59 +474,115 @@ public class TestScreenActivity extends AppCompatActivity implements Reachabilit
     }
 
     @Override
-    public void completed(TestSessionManager.TestSessionManagerError status) {
+    public void completed(final TestSessionManager.TestSessionManagerError status) {
         Log.d(TAG, "Received a processing complete message");
 
-        if (progressDialog != null) {
-            progressDialog.dismiss();
-            progressDialog = null;
-        }
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (progressDialog != null) {
+                    progressDialog.dismiss();
+                    progressDialog = null;
+                }
 
-        final AlertDialog alert = new AlertDialog.Builder(activity).create();
-        alert.setTitle("Test Complete");
-        alert.setCancelable(false);
+                final AlertDialog alert = new AlertDialog.Builder(activity).create();
+                alert.setTitle("Test Complete");
+                alert.setCancelable(false);
 
-        if (status == null) {
-            switch(sessionManager.state) {
-                case noTest: {
-                    break;
-                }
-                case goodTestFirst: {
-                    alert.setMessage("Your test was processed successfully. Tap Next Test to continue.");
-                    alert.setButton(AlertDialog.BUTTON_NEUTRAL, "Next Test", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            startTest.setVisibility(View.VISIBLE);
-                            dialogInterface.dismiss();
+                if (status == null) {
+                    switch(sessionManager.state) {
+                        case noTest: {
+                            break;
                         }
-                    });
-                    break;
-                }
-                case notProcessedTestFirst: {
-                    alert.setMessage("An error occurred while processing this test. Tap Next Test to try it again.");
-                    alert.setButton(AlertDialog.BUTTON_NEUTRAL, "Next Test", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            startTest.setVisibility(View.VISIBLE);
-                            dialogInterface.dismiss();
+                        case goodTestFirst: {
+                            alert.setMessage("Your test was processed successfully. Tap Next Test to continue.");
+                            alert.setButton(AlertDialog.BUTTON_NEUTRAL, "Next Test", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    startTest.setVisibility(View.VISIBLE);
+                                    dialogInterface.dismiss();
+                                }
+                            });
+                            break;
                         }
-                    });
-                    break;
-                }
-                case notReproducibleTestFirst: {
-                    alert.setMessage("Your current tests' results aren't reproducible. Tap Next Test to take another test.");
-                    alert.setButton(AlertDialog.BUTTON_NEUTRAL, "Next Test", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            startTest.setVisibility(View.VISIBLE);
-                            dialogInterface.dismiss();
+                        case notProcessedTestFirst: {
+                            alert.setMessage("An error occurred while processing this test. Tap Next Test to try it again.");
+                            alert.setButton(AlertDialog.BUTTON_NEUTRAL, "Next Test", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    startTest.setVisibility(View.VISIBLE);
+                                    dialogInterface.dismiss();
+                                }
+                            });
+                            break;
                         }
-                    });
-                    break;
+                        case notReproducibleTestFirst: {
+                            alert.setMessage("Your current tests' results aren't reproducible. Tap Next Test to take another test.");
+                            alert.setButton(AlertDialog.BUTTON_NEUTRAL, "Next Test", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    startTest.setVisibility(View.VISIBLE);
+                                    dialogInterface.dismiss();
+                                }
+                            });
+                            break;
+                        }
+                        case notProcessedTestFinal: {
+                            alert.setMessage("Another processing error occurred. Start a new test session in order to try again.");
+                            alert.setButton(AlertDialog.BUTTON_NEUTRAL, "Dismiss", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    dialogInterface.dismiss();
+                                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                    activity.startActivity(intent);
+                                    activity.finish();
+                                }
+                            });
+                            break;
+                        }
+                        case notReproducibleTestFinal: {
+                            alert.setMessage("The results from your tests aren't reproducible. Please begin a new test session to try again.");
+                            alert.setButton(AlertDialog.BUTTON_NEUTRAL, "View Results", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    dialogInterface.dismiss();
+                                    Gson gson = new Gson();
+                                    String testResults = gson.toJson(sessionManager.testSession, TestSession.class);
+                                    Intent intent = new Intent(getApplicationContext(), TestResultsActivity.class);
+                                    intent.putExtra("json", testResults);
+                                    activity.startActivity(intent);
+                                    activity.finish();
+                                }
+                            });
+                            break;
+                        }
+                        case reproducibleTestFinal: {
+                            alert.setMessage("You've completed the test session with reproducible results!");
+                            alert.setButton(AlertDialog.BUTTON_NEUTRAL, "View Results", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    dialogInterface.dismiss();
+                                    Gson gson = new Gson();
+                                    String testResults = gson.toJson(sessionManager.testSession, TestSession.class);
+                                    Intent intent = new Intent(getApplicationContext(), TestResultsActivity.class);
+                                    intent.putExtra("json", testResults);
+                                    activity.startActivity(intent);
+                                    activity.finish();
+                                }
+                            });
+                            break;
+                        }
+                        default: {
+                            break;
+                        }
+                    }
+                    // '### test - removed the call to runOnUiThread  TSP 1/17/18
+                    alert.show();
                 }
-                case notProcessedTestFinal: {
-                    alert.setMessage("Another processing error occurred. Start a new test session in order to try again.");
-                    alert.setButton(AlertDialog.BUTTON_NEUTRAL, "Dismiss", new DialogInterface.OnClickListener() {
+                else {
+                    alert.setTitle("Upload Error");
+
+                    alert.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel Test", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
                             dialogInterface.dismiss();
@@ -535,91 +591,41 @@ public class TestScreenActivity extends AppCompatActivity implements Reachabilit
                             activity.finish();
                         }
                     });
-                    break;
-                }
-                case notReproducibleTestFinal: {
-                    alert.setMessage("The results from your tests aren't reproducible. Please begin a new test session to try again.");
-                    alert.setButton(AlertDialog.BUTTON_NEUTRAL, "View Results", new DialogInterface.OnClickListener() {
+                    alert.setButton(AlertDialog.BUTTON_NEUTRAL, "Try Again", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
+                            startTest.setVisibility(View.VISIBLE);
                             dialogInterface.dismiss();
-                            Gson gson = new Gson();
-                            String testResults = gson.toJson(sessionManager.testSession, TestSession.class);
-                            Intent intent = new Intent(getApplicationContext(), TestResultsActivity.class);
-                            intent.putExtra("json", testResults);
-                            activity.startActivity(intent);
-                            activity.finish();
                         }
                     });
-                    break;
-                }
-                case reproducibleTestFinal: {
-                    alert.setMessage("You've completed the test session with reproducible results!");
-                    alert.setButton(AlertDialog.BUTTON_NEUTRAL, "View Results", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            dialogInterface.dismiss();
-                            Gson gson = new Gson();
-                            String testResults = gson.toJson(sessionManager.testSession, TestSession.class);
-                            Intent intent = new Intent(getApplicationContext(), TestResultsActivity.class);
-                            intent.putExtra("json", testResults);
-                            activity.startActivity(intent);
-                            activity.finish();
+
+                    switch (status) {
+                        case testUploadFailed: {
+                            alert.setMessage("The upload process failed.");
+                            break;
                         }
-                    });
-                    break;
-                }
-                default: {
-                    break;
-                }
-            }
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
+                        case createUploadTargetFailed: {
+                            alert.setMessage("The upload target could not be created.");
+                            break;
+                        }
+                        case processingTimeout: {
+                            alert.setMessage("The processing timeout has been exceeded.");
+                            break;
+                        }
+                        case retrieveTestSessionFailed: {
+                            alert.setMessage("The test session information could not be retrieved.");
+                            break;
+                        }
+                        case uploadTargetCreationFailed: {
+                            alert.setMessage("The upload target could not be created.");
+                            break;
+                        }
+                    }
+
                     alert.show();
                 }
-            });
-        }
-        else {
-            alert.setTitle("Upload Error");
-            alert.setMessage("(" + status.toString() + ")");
-            alert.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel Test", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    dialogInterface.dismiss();
-                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                    activity.startActivity(intent);
-                    activity.finish();
-                }
-            });
-            alert.setButton(AlertDialog.BUTTON_NEUTRAL, "Try Again", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    startTest.setVisibility(View.VISIBLE);
-                    dialogInterface.dismiss();
-                }
-            });
-
-            switch (status) {
-                case testUploadFailed: {
-                    break;
-                }
-                case createUploadTargetFailed: {
-                    break;
-                }
-                case processingTimeout: {
-                    break;
-                }
-                case retrieveTestSessionFailed: {
-                    break;
-                }
-                case uploadTargetCreationFailed: {
-                    break;
-                }
             }
-        }
-
-
+        });
     }
 
     @Override

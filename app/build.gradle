@@ -7,7 +7,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 26
         versionCode 1
-        versionName "1.0"
+        versionName "1.1"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -30,5 +30,5 @@ dependencies {
     compile 'com.android.volley:volley:1.1.0-rc1'
     compile 'com.amazonaws:aws-android-sdk-core:2.2.+'
     compile 'com.amazonaws:aws-android-sdk-s3:2.2.+'
-    compile 'com.sparohealth.wingkit:wingkit-sdk:0.1.0@aar'
+    compile 'com.sparohealth.wingkit:wingkit-sdk:0.1.1@aar'
 }
