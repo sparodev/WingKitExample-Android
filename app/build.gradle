@@ -28,7 +28,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.google.code.gson:gson:2.8.1'
     compile 'com.android.volley:volley:1.1.0-rc1'
-    compile 'com.amazonaws:aws-android-sdk-core:2.2.+'
-    compile 'com.amazonaws:aws-android-sdk-s3:2.2.+'
-    compile 'com.sparohealth.wingkit:wingkit-sdk:0.1.1@aar'
+    compile 'com.amazonaws:aws-android-sdk-core:2.6.14'
+    compile 'com.amazonaws:aws-android-sdk-s3:2.6.14'
+    compile 'com.sparohealth.wingkit:wingkit-sdk:0.1.2@aar'
 }
